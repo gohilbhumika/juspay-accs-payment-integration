@@ -1,0 +1,61 @@
+{
+  "name": "@adobe/commerce-checkout-payment-method",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Out-of-process payment method validation and filtering for the Adobe Commerce checkout starter kit.",
+  "type": "module",
+  "scripts": {
+    "code:check": "npx biome check .",
+    "code:fix": "npx biome check --write .",
+    "postinstall": "npx aio-commerce-lib-app hooks postinstall",
+    "test": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@adobe/aio-commerce-lib-admin-ui": "^1.1.0",
+    "@adobe/aio-commerce-lib-app": "^1.8.0",
+    "@adobe/aio-commerce-sdk": "^1.4.0",
+    "@adobe/aio-lib-state": "^5.4.0",
+    "@adobe/aio-lib-telemetry": "^1.2.0",
+    "@react-spectrum/s2": "^1.5.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.4",
+    "@tsconfig/bases": "^1.0.26",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitest/coverage-v8": "^5.0.0",
+    "cross-env": "^10.1.0",
+    "typescript": "^6.0.3",
+    "ultracite": "^7.0.0",
+    "vitest": "^5.0.0"
+  },
+  "engines": {
+    "node": "^24.0.0"
+  },
+  "imports": {
+    "#app.commerce.config": "./src/commerce-extensibility-1/.generated/app.commerce.config.js",
+    "#web/*": "./src/commerce-backend-ui-2/web-src/src/*"
+  },
+  "alias": {
+    "react/jsx-dev-runtime": "./scripts/react-jsx-dev-shim.js"
+  },
+  "@parcel/bundler-default": {
+    "manualSharedBundles": [
+      {
+        "assets": [
+          "**/@react-spectrum/s2/**",
+          "src/commerce-backend-ui-2/web-src/*.{js,jsx,ts,tsx}"
+        ],
+        "name": "s2-styles",
+        "types": [
+          "css"
+        ]
+      }
+    ]
+  },
+  "@parcel/resolver-default": {
+    "packageExports": true
+  }
+}

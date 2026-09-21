@@ -1,0 +1,32 @@
+web: web-src
+
+# The [pre-app-build, pre-app-dev, pre-app-run] hooks are auto-generated. Do not remove or manually edit.
+hooks:
+  # Windows fix: the generator's default hooks use POSIX `VAR=value command` syntax,
+  # which cmd.exe can't parse. cross-env makes the env-var assignment work on any shell.
+  pre-app-build: npx cross-env EXTENSION=backend-ui/2 npx aio-commerce-lib-app hooks pre-app-build
+  pre-app-dev: npx cross-env EXTENSION=backend-ui/2 npx aio-commerce-lib-app hooks pre-app-dev
+  pre-app-run: npx cross-env EXTENSION=backend-ui/2 npx aio-commerce-lib-app hooks pre-app-run
+
+operations:
+  view:
+    - type: web
+      impl: index.html
+
+runtimeManifest:
+  packages:
+    juspay-config:
+      license: Apache-2.0
+      actions:
+        config:
+          function: actions/config/index.js
+          web: 'yes'
+          runtime: nodejs:24
+          inputs:
+            LOG_LEVEL: debug
+            stateRegion: apac
+            CONFIG_ENCRYPTION_KEY: $CONFIG_ENCRYPTION_KEY
+            AIO_COMMERCE_AUTH_IMS_ORG_ID: $AIO_COMMERCE_AUTH_IMS_ORG_ID
+          annotations:
+            require-adobe-auth: false
+            final: true

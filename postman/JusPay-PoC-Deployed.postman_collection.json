@@ -1,0 +1,260 @@
+{
+  "info": {
+    "name": "JusPay Checkout PoC (deployed — Stage)",
+    "description": "Same requests as the local collection, pointed at the deployed Adobe I/O Runtime Stage workspace instead of the local dev server (aio app run). Auth uses an OAuth Server-to-Server credential (auto-refreshed via the collection's Pre-request Script) — set the `clientSecret` collection variable before running requests 2-4. See GUIDE.md B-7/B-8 for why a personal `aio auth login` token doesn't work here.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://108480-juspaycheckoutpoc-stage.adobeioruntime.net/api/v1/web",
+      "description": "Deployed Stage workspace runtime URL — switched back to the original JuspayCheckoutPOC project 2026-09-17 to resolve a technical-account mismatch on the validate-payment webhook (see GUIDE.md B-15). No trailing slash — Adobe I/O Runtime returns 'The requested resource does not exist' on a double slash."
+    },
+    {
+      "key": "packageName",
+      "value": "payment-method"
+    },
+    {
+      "key": "orderId",
+      "value": "poc-order-{{$timestamp}}",
+      "description": "Auto-generated per request; overwritten by the create-session Tests script after a successful call"
+    },
+    {
+      "key": "returnUrl",
+      "value": "http://localhost:3000/integration-paths-demo.html",
+      "description": "Passed to JusPay as return_url — must have NO query string (JusPay rejects one that does). Default points at the demo page (../demo/integration-paths-demo.html) served via `npx serve` from the demo/ folder, so paying via this request's paymentLink lands on that page's Step 3, which auto-calls payment-status. Change to any URL you can observe if not running the demo."
+    },
+    {
+      "key": "juspayOrderId",
+      "value": "",
+      "description": "Filled in automatically by the create-session request's Tests script"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "description": "Auto-filled by the collection's Pre-request Script (fetches a fresh Adobe IMS token via the OAuth Server-to-Server credential whenever this is empty or expired). No need to set manually. In the real flow, Commerce supplies its own token automatically — this is testing-only."
+    },
+    {
+      "key": "accessTokenExpiry",
+      "value": "",
+      "description": "Internal — epoch ms when accessToken should be refreshed. Managed by the Pre-request Script, don't edit."
+    },
+    {
+      "key": "imsOrgId",
+      "value": "0DC5A26A5AC20D8C0A495ECD@AdobeOrg",
+      "description": "Adobe IMS Org ID for Tekno Point Multimedia India Pvt Ltd Partner Sandbox (org 108480), sent as x-gw-ims-org-id — also required by require-adobe-auth: true actions, alongside the bearer token. Not a secret, safe to keep in this file."
+    },
+    {
+      "key": "clientId",
+      "value": "5c6fc1abaa5a401fa13427d4f75005f4",
+      "description": "OAuth Server-to-Server credential's Client ID (from Developer Console, JuspayCheckoutPOC project's Stage workspace, switched back 2026-09-17). Not secret by itself."
+    },
+    {
+      "key": "clientSecret",
+      "value": "",
+      "description": "OAuth Server-to-Server Client Secret — set this yourself in Postman's variable editor (Current value), do NOT put a real value in this file / commit it. Used only by the Pre-request Script to fetch a fresh accessToken."
+    },
+    {
+      "key": "s2sScope",
+      "value": "openid,AdobeID,additional_info.projectedProductContext,read_organizations,adobeio.abdata.read,additional_info.roles,adobeio.abdata.manage,adobeio.abdata.write,org.read,profile,email,commerce.accs",
+      "description": "Scopes for the OAuth Server-to-Server token request — matches the credential's current scopes (updated after adding Adobe Commerce as a Cloud Service, see GUIDE.md B-7/B-8). Not secret."
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const clientSecret = pm.collectionVariables.get('clientSecret');",
+          "const now = Date.now();",
+          "const expiry = parseInt(pm.collectionVariables.get('accessTokenExpiry') || '0', 10);",
+          "const haveToken = pm.collectionVariables.get('accessToken');",
+          "",
+          "if (!clientSecret) {",
+          "  console.warn('clientSecret is empty — set it in the collection Variables tab (Current value) to enable auto token refresh.');",
+          "} else if (!haveToken || now >= expiry) {",
+          "  console.log('Fetching a fresh Adobe IMS access token...');",
+          "  pm.sendRequest({",
+          "    url: 'https://ims-na1.adobelogin.com/ims/token/v3',",
+          "    method: 'POST',",
+          "    header: { 'Content-Type': 'application/x-www-form-urlencoded' },",
+          "    body: {",
+          "      mode: 'urlencoded',",
+          "      urlencoded: [",
+          "        { key: 'grant_type', value: 'client_credentials' },",
+          "        { key: 'client_id', value: pm.collectionVariables.get('clientId') },",
+          "        { key: 'client_secret', value: clientSecret },",
+          "        { key: 'scope', value: pm.collectionVariables.get('s2sScope') }",
+          "      ]",
+          "    }",
+          "  }, (err, res) => {",
+          "    if (err) { console.error('Token fetch failed:', err); return; }",
+          "    const body = res.json();",
+          "    if (body.access_token) {",
+          "      pm.collectionVariables.set('accessToken', body.access_token);",
+          "      pm.collectionVariables.set('accessTokenExpiry', String(Date.now() + ((body.expires_in || 86400) * 1000) - 60000));",
+          "      console.log('Refreshed Adobe IMS access token, expires in', body.expires_in, 'seconds');",
+          "    } else {",
+          "      console.error('Token response missing access_token:', JSON.stringify(body));",
+          "    }",
+          "  });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "1. create-session",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"amount\": \"10.00\",\n  \"customerId\": \"guest_postman_test\",\n  \"returnUrl\": \"{{returnUrl}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/{{packageName}}/create-session",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{packageName}}", "create-session"]
+        },
+        "description": "Calls JusPay's real sandbox POST /orders under the hood, via the deployed action. On success, returns { orderId, paymentLink, status, clientAuthToken }. Open `paymentLink` in a browser to actually pay on JusPay's hosted page before testing validate-payment below — until then the order stays in NEW/CREATED status. This action is require-adobe-auth: false, so no auth headers needed here. Paying will redirect the browser to {{returnUrl}} with order_id/status/signature appended as query params (confirmed empirically — see JUSPAY_INTEGRATION.md section 3)."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  const body = pm.response.json();",
+              "  pm.collectionVariables.set('juspayOrderId', body.body.orderId);",
+              "  console.log('Captured juspayOrderId:', body.body.orderId);",
+              "  console.log('Pay here to move this order to CHARGED:', body.body.paymentLink);",
+              "}",
+              "pm.test('status code is 200', () => pm.response.to.have.status(200));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. validate-payment (before paying — expect exception)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "x-gw-ims-org-id", "value": "{{imsOrgId}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"payment_method\": \"juspay\",\n  \"payment_additional_information\": {\n    \"juspay_order_id\": \"{{juspayOrderId}}\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/{{packageName}}/validate-payment",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{packageName}}", "validate-payment"]
+        },
+        "description": "Run this right after create-session, without paying — should return { op: 'exception', message: 'JusPay payment not successful (status: NEW)' } since the order hasn't been charged yet. This confirms we never blindly trust the client. Needs the collection's `clientSecret` variable set (auto-refreshes accessToken via the pre-request script) — a personal `aio auth login` token does NOT satisfy this require-adobe-auth: true gate, see GUIDE.md B-7."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status code is 200 (webhook responses are always 200 w/ op field)', () => pm.response.to.have.status(200));",
+              "console.log(pm.response.json());"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. validate-payment (after paying via paymentLink — expect success)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "x-gw-ims-org-id", "value": "{{imsOrgId}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"payment_method\": \"juspay\",\n  \"payment_additional_information\": {\n    \"juspay_order_id\": \"{{juspayOrderId}}\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/{{packageName}}/validate-payment",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{packageName}}", "validate-payment"]
+        },
+        "description": "Open request #1's `paymentLink` in a browser first and complete a test payment on JusPay's hosted page, THEN run this. Should return { op: 'success' } once JusPay reports status CHARGED."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('op is success', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.body.op).to.eql('success');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. filter-payment (sanity check)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "x-gw-ims-org-id", "value": "{{imsOrgId}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"payload\": {\n    \"cart\": { \"items\": [] },\n    \"customer\": null\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/{{packageName}}/filter-payment",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{packageName}}", "filter-payment"]
+        },
+        "description": "Not exercised by our JusPay-specific logic (it's the scaffold's example filtering unrelated methods like checkmo/cashondelivery/banktransfer), but useful to confirm this require-adobe-auth: true action is reachable at all on the deployed environment."
+      }
+    },
+    {
+      "name": "5. payment-status (frontend-facing, no auth)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/{{packageName}}/payment-status?orderId={{juspayOrderId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{packageName}}", "payment-status"],
+          "query": [{ "key": "orderId", "value": "{{juspayOrderId}}" }]
+        },
+        "description": "Our own addition, not part of the base starter kit — this is what the storefront calls directly after JusPay redirects back to `return_url`, to re-verify the real status server-to-server rather than trusting the redirect's own query params. require-adobe-auth: false, same reasoning as create-session, so no auth headers needed. Returns { orderId, status, success }; success is only true once JusPay reports CHARGED."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status code is 200', () => pm.response.to.have.status(200));",
+              "console.log(pm.response.json());"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}

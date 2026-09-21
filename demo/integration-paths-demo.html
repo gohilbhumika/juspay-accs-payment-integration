@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JusPay Integration PoC</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#FAFAF8; --surface:#FFFFFF; --surface-2:#F0EFEA;
+    --ink:#1A1A18; --ink-muted:#6B6862; --border:#E2E0DA;
+    --accent:#2E5F5A; --accent-soft:#E3EEEC; --accent-ink:#1F4744;
+    --good:#1E8E5C; --good-soft:#E1F2E9; --good-ink:#166B46;
+    --warn:#B9761E; --warn-soft:#F7ECDA; --warn-ink:#8A5713;
+    --code-bg:#14171A; --code-ink:#E7EAE8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14171A; --surface:#1B1F22; --surface-2:#202528;
+      --ink:#E7EAE8; --ink-muted:#93A09C; --border:#2A2F31;
+      --accent:#6FBFB6; --accent-soft:#1D3532; --accent-ink:#A6E0D8;
+      --good:#4FD299; --good-soft:#173226; --good-ink:#7BE3B4;
+      --warn:#E3A548; --warn-soft:#332714; --warn-ink:#F0C583;
+      --code-bg:#0B0D0E; --code-ink:#E7EAE8;
+    }
+  }
+  *{box-sizing:border-box;}
+  body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;line-height:1.6;margin:0;}
+  .page{max-width:820px;margin:0 auto;padding:52px 24px 80px;display:flex;flex-direction:column;gap:40px;}
+
+  .eyebrow{font-family:"Fira Code",monospace;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-ink);}
+  h1{font-family:"Zilla Slab",Georgia,serif;font-weight:600;font-size:clamp(30px,4.5vw,40px);line-height:1.1;margin:8px 0 10px;}
+  .subtitle{font-size:15px;color:var(--ink-muted);max-width:64ch;margin:0;}
+  .setup-note{font-size:13px;color:var(--ink-muted);background:var(--surface-2);padding:10px 14px;border-radius:8px;margin-top:16px;}
+  .setup-note code{font-family:"Fira Code",monospace;font-size:12.5px;color:var(--ink);}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px 28px;box-shadow:0 1px 2px rgba(0,0,0,.04),0 10px 26px -18px rgba(0,0,0,.18);}
+  .card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;}
+  .opt-num{font-family:"Fira Code",monospace;font-size:12px;color:var(--ink-muted);}
+  .opt-title{font-family:"Zilla Slab",Georgia,serif;font-weight:600;font-size:20px;margin:4px 0 0;}
+  .pill{font-family:"Fira Code",monospace;font-size:11px;font-weight:500;padding:4px 10px;border-radius:99px;white-space:nowrap;}
+  .pill.live{background:var(--good-soft);color:var(--good-ink);}
+  .pill.na{background:var(--warn-soft);color:var(--warn-ink);}
+  .desc{font-size:14.5px;color:var(--ink-muted);max-width:66ch;margin:12px 0 0;}
+
+  label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-muted);margin:16px 0 4px;}
+  input{padding:9px 10px;border:1px solid var(--border);border-radius:7px;width:220px;font-size:14px;background:var(--surface);color:var(--ink);font-family:"Fira Code",monospace;}
+  .row{display:flex;gap:16px;flex-wrap:wrap;}
+  button{margin-top:16px;padding:11px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;}
+  button:hover{background:var(--accent-ink);}
+
+  pre{background:var(--code-bg);color:var(--code-ink);padding:16px;border-radius:10px;overflow-x:auto;font-family:"Fira Code",monospace;font-size:12px;white-space:pre-wrap;word-break:break-all;margin-top:14px;}
+  .pay-link{display:inline-block;margin-top:12px;padding:10px 18px;background:var(--good);color:#fff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:600;}
+  .hint{font-size:13px;color:var(--ink-muted);background:var(--surface-2);padding:10px 14px;border-radius:8px;margin-top:12px;}
+  iframe.jp-embed{width:100%;height:600px;border:1px solid var(--border);border-radius:10px;margin-top:14px;}
+  code{font-family:"Fira Code",monospace;font-size:12.5px;background:var(--surface-2);padding:2px 6px;border-radius:4px;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="eyebrow">PoC — self-contained, real requests</div>
+    <h1>JusPay Integration PoC</h1>
+    <p class="subtitle">Every button below makes a real call to our deployed App Builder action, which makes a real call to JusPay's sandbox. Nothing here is mocked.</p>
+    <div class="setup-note">Serve this file over <code>http://localhost</code> (e.g. <code>npx serve</code> from this folder) — opening it directly as <code>file://</code> can block the network call in some browsers. Also make sure JusPay credentials are saved via the <strong>JusPay Config</strong> page in Commerce Admin first — there's no <code>.env</code> fallback, so every button below just returns "not configured" until that's done.</div>
+  </header>
+
+  <section class="card">
+    <div class="card-head">
+      <div><span class="opt-num">Option 1</span><h2 class="opt-title">Hosted checkout (redirect)</h2></div>
+      <span class="pill live">● Live call</span>
+    </div>
+    <p class="desc">Creates a real JusPay order and opens their actual hosted payment page. No SDK, no card handling on this page at all.</p>
+
+    <div class="row">
+      <div><label>Amount (₹)</label><input id="amount" value="10.00"></div>
+      <div><label>Customer ID</label><input id="customerId" value="demo_customer_1"></div>
+    </div>
+    <button onclick="createSession()">Create real JusPay session</button>
+    <div id="result"></div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <div><span class="opt-num">Option 2</span><h2 class="opt-title">Custom UI, embedded</h2></div>
+      <span class="pill live">● Live call</span>
+    </div>
+    <p class="desc">Same session as Option 1 — JusPay's response also includes an <code>iframe</code> link. Embedding it keeps the customer on this page instead of a full redirect.</p>
+    <div id="embed"></div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <div><span class="opt-num">Step 2</span><h2 class="opt-title">Validate the payment</h2></div>
+      <span class="pill live">● Live call</span>
+    </div>
+    <p class="desc">After paying on the link above (or before, to see the "not yet paid" response), this calls our deployed <code>validate-payment</code> action, which asks JusPay's server directly whether the order is really <code>CHARGED</code>. This is the same check Commerce's <code>sales_order_place_before</code> webhook runs before accepting the order.</p>
+    <div class="setup-note"><code>validate-payment</code> requires <code>require-adobe-auth</code> — paste a Bearer token from an OAuth Server-to-Server credential (see the integration doc, section 5) below. A personal login token will not work.</div>
+
+    <div class="row">
+      <div><label>Order ID</label><input id="validateOrderId" placeholder="filled in after Create session"></div>
+      <div><label>IMS Org ID</label><input id="imsOrgId" placeholder="e.g. 0DC5A26A5AC20D8C0A495ECD@AdobeOrg"></div>
+    </div>
+    <label>Bearer token</label>
+    <input id="bearerToken" style="width:100%" placeholder="paste access_token here" type="password">
+    <button onclick="validatePayment()">Call validate-payment</button>
+    <div id="validateResult"></div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <div><span class="opt-num">Option 3</span><h2 class="opt-title">Server-to-server direct</h2></div>
+      <span class="pill na">No separate demo</span>
+    </div>
+    <p class="desc">Nothing to click here — Option 1's button above <em>is</em> this pattern already running. The App Builder action holds the API key and makes the real server-to-server call; the browser never sees it. Options 1 and 2 just differ in what happens with the response.</p>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <div><span class="opt-num">Step 3</span><h2 class="opt-title">Handle the return redirect</h2></div>
+      <span class="pill live">● Live call</span>
+    </div>
+    <p class="desc">"Create real JusPay session" above now passes <code>return_url</code> pointing back at this same page. After paying, JusPay redirects the browser back here with <code>order_id</code>, <code>status</code>, and a signature appended to the URL. This page reads <code>order_id</code> from that URL automatically, then calls our deployed <code>payment-status</code> action to re-verify the real status server-to-server — the redirect's own <code>status</code> query param is shown below for comparison, but never trusted on its own.</p>
+    <div id="returnInfo"><p class="hint">Not currently on a redirect — pay via Option 1 above and this section fills in automatically when JusPay sends you back.</p></div>
+  </section>
+
+</div>
+
+<script>
+const BASE_URL = "https://108480-juspaycheckoutpoc-stage.adobeioruntime.net/api/v1/web/payment-method";
+const CREATE_SESSION_URL = BASE_URL + "/create-session";
+const VALIDATE_PAYMENT_URL = BASE_URL + "/validate-payment";
+const PAYMENT_STATUS_URL = BASE_URL + "/payment-status";
+
+async function createSession() {
+  const amount = document.getElementById("amount").value;
+  const customerId = document.getElementById("customerId").value;
+  const orderId = "demo-order-" + Date.now();
+  const resultDiv = document.getElementById("result");
+  const embedDiv = document.getElementById("embed");
+  resultDiv.innerHTML = "<p>Calling create-session…</p>";
+  embedDiv.innerHTML = "";
+
+  // return_url can't contain a query string, so we send the customer back to this same
+  // page with no params — JusPay appends its own (order_id, status, signature, ...).
+  const returnUrl = window.location.origin + window.location.pathname;
+
+  try {
+    const res = await fetch(CREATE_SESSION_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId, amount, customerId, returnUrl }),
+    });
+    const data = await res.json();
+    const body = data.body || data;
+
+    let html = "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
+    if (body.paymentLink) {
+      html += '<br><a class="pay-link" href="' + body.paymentLink + '" target="_blank">Open real JusPay checkout →</a>';
+      html += '<p class="hint">Test card <code>4242 4242 4242 4242</code>, any future expiry, any CVV.</p>';
+    }
+    resultDiv.innerHTML = html;
+
+    embedDiv.innerHTML = body.iframeLink
+      ? '<iframe class="jp-embed" src="' + body.iframeLink + '" allow="payment *;"></iframe>'
+      : '<p class="hint">No <code>iframeLink</code> yet — redeploy the app so create-session returns it.</p>';
+
+    document.getElementById("validateOrderId").value = orderId;
+  } catch (err) {
+    resultDiv.innerHTML = "<pre>Request failed: " + err.message + "</pre><p class=\"hint\">Serve this over http://localhost, not file://.</p>";
+  }
+}
+
+async function validatePayment() {
+  const orderId = document.getElementById("validateOrderId").value;
+  const imsOrgId = document.getElementById("imsOrgId").value;
+  const token = document.getElementById("bearerToken").value;
+  const resultDiv = document.getElementById("validateResult");
+
+  if (!orderId || !token) {
+    resultDiv.innerHTML = '<p class="hint">Order ID and Bearer token are both required — run Create session first, and paste a technical-account token.</p>';
+    return;
+  }
+
+  resultDiv.innerHTML = "<p>Calling validate-payment…</p>";
+  try {
+    const res = await fetch(VALIDATE_PAYMENT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token,
+        "x-gw-ims-org-id": imsOrgId,
+      },
+      body: JSON.stringify({
+        payment_method: "juspay",
+        payment_additional_information: { juspay_order_id: orderId },
+      }),
+    });
+    const data = await res.json();
+    const body = data.body || data;
+
+    let html = "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
+    if (body.op === "success") {
+      html += '<p class="hint">✅ JusPay confirmed this order as <code>CHARGED</code> — this is exactly what Commerce\'s webhook sees before accepting the order.</p>';
+    } else {
+      html += '<p class="hint">Not accepted yet — either the sandbox payment hasn\'t been completed, or the order id doesn\'t match a real session. Not a failure by itself.</p>';
+    }
+    resultDiv.innerHTML = html;
+  } catch (err) {
+    resultDiv.innerHTML = "<pre>Request failed: " + err.message + "</pre><p class=\"hint\">Serve this over http://localhost, not file://.</p>";
+  }
+}
+
+async function handleReturnRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const orderId = params.get("order_id");
+  if (!orderId) return;
+
+  const returnInfoDiv = document.getElementById("returnInfo");
+  const redirectParams = Object.fromEntries(params.entries());
+  let html = "<p><strong>Redirect params from JusPay (not trusted on their own):</strong></p>";
+  html += "<pre>" + JSON.stringify(redirectParams, null, 2) + "</pre>";
+  html += "<p>Re-verifying via <code>payment-status</code>…</p>";
+  returnInfoDiv.innerHTML = html;
+
+  try {
+    const res = await fetch(PAYMENT_STATUS_URL + "?orderId=" + encodeURIComponent(orderId), {
+      method: "GET",
+    });
+    const data = await res.json();
+    const body = data.body || data;
+
+    html += "<p><strong>Server-verified status:</strong></p><pre>" + JSON.stringify(body, null, 2) + "</pre>";
+    html += body.success
+      ? '<p class="hint">✅ Confirmed CHARGED directly against JusPay\'s server, independent of the redirect params above.</p>'
+      : '<p class="hint">Not confirmed as CHARGED yet by the server-side check.</p>';
+    returnInfoDiv.innerHTML = html;
+  } catch (err) {
+    returnInfoDiv.innerHTML = html + "<pre>Request failed: " + err.message + "</pre>";
+  }
+}
+
+handleReturnRedirect();
+</script>
+</body>
+</html>

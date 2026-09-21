@@ -1,0 +1,244 @@
+html,
+body {
+  margin: 0;
+  font-family: "Adobe Clean", -apple-system, "Segoe UI", sans-serif;
+  background: #f5f6f8;
+  color: #1d1d1d;
+}
+
+.jp-page {
+  padding: 32px 24px 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.jp-wordmark {
+  font-size: 28px;
+  font-weight: 700;
+  font-style: italic;
+  color: #0c2a4a;
+  margin-bottom: 24px;
+}
+
+.jp-card {
+  background: #fff;
+  border: 1px solid #e2e2e2;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  width: 100%;
+  max-width: 560px;
+  padding: 24px 28px 20px;
+}
+
+.jp-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jp-card-icon {
+  color: #0c2a4a;
+  font-size: 16px;
+}
+
+.jp-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0c2a4a;
+  margin: 0;
+}
+
+.jp-divider {
+  border-top: 1px solid #ececec;
+  margin: 14px 0;
+}
+
+.jp-intro {
+  background: #f7f7f8;
+  border-radius: 4px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #444;
+  margin: 0 0 20px;
+}
+
+.jp-intro code {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  background: #eee;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.jp-field {
+  margin-bottom: 18px;
+}
+
+.jp-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.jp-required {
+  color: #c9302c;
+}
+
+.jp-field input,
+.jp-field select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  font-size: 13px;
+  border: 1px solid #cfcfcf;
+  border-radius: 4px;
+  background: #fff;
+  color: #1d1d1d;
+}
+
+.jp-field input:focus,
+.jp-field select:focus {
+  outline: none;
+  border-color: #4b7bec;
+  box-shadow: 0 0 0 2px rgba(75, 123, 236, 0.15);
+}
+
+.jp-help {
+  font-size: 12px;
+  color: #767676;
+  margin: 6px 0 0;
+}
+
+.jp-configured {
+  background: #f7f9fb;
+  border-left: 3px solid #4b7bec;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  border-radius: 0 4px 4px 0;
+  margin-bottom: 18px;
+}
+
+.jp-configured ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.jp-mono {
+  font-family: "SFMono-Regular", Consolas, monospace;
+}
+
+.jp-banner {
+  padding: 8px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.jp-banner-error {
+  background: #fdecea;
+  border: 1px solid #e0857a;
+  color: #7a1f14;
+}
+
+.jp-banner-success {
+  background: #eaf6ec;
+  border: 1px solid #7fc490;
+  color: #1e5c2b;
+}
+
+.jp-banner-confirm {
+  background: #fff7e6;
+  border: 1px solid #e0b96a;
+  color: #5c4415;
+}
+
+.jp-banner-confirm p {
+  margin: 0 0 10px;
+}
+
+.jp-confirm-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.jp-cancel-button {
+  background: #fff;
+  color: #444;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.jp-cancel-button:hover {
+  background: #f2f2f2;
+}
+
+.jp-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+.jp-save-button {
+  background: #2f5fe0;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 22px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.jp-save-button:hover:not(:disabled) {
+  background: #2650c2;
+}
+
+.jp-save-button:disabled {
+  background: #a9bce8;
+  cursor: not-allowed;
+}
+
+.jp-reset-button {
+  background: #fff;
+  color: #b02a25;
+  border: 1px solid #d9a3a0;
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.jp-reset-button:hover:not(:disabled) {
+  background: #fdecea;
+}
+
+.jp-reset-button:disabled {
+  color: #c99;
+  border-color: #eed3d1;
+  cursor: not-allowed;
+}
+
+.jp-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #cfd8ee;
+  border-top-color: #2f5fe0;
+  border-radius: 50%;
+  display: inline-block;
+  animation: jp-spin 0.7s linear infinite;
+}
+
+@keyframes jp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
