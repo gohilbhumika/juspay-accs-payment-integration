@@ -107,6 +107,18 @@ describe("create-session", () => {
     );
   });
 
+  test("warmup requests return immediately without calling JusPay or resolving config", async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const result = await main({ warmup: true });
+
+    expect(result.statusCode).toBe(200);
+    expect(result.body).toEqual({ warm: true });
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(stateLib.init).not.toHaveBeenCalled();
+  });
+
   test("returns a bad request when orderId, amount or customerId is missing", async () => {
     const result = await main(buildParams({ customerId: undefined }));
 
@@ -139,5 +151,64 @@ describe("create-session", () => {
     const result = await main(buildParams());
 
     expect(result.error.statusCode).toBe(500);
+  });
+
+  test("warms up payment-status after successfully creating a real session", async () => {
+    mockSavedConfig();
+    mockJuspayOrderResponse({ order_id: "cart-123", status: "NEW" });
+
+    await main(
+      buildParams({
+        PAYMENT_STATUS_URL:
+          "https://example.test/api/v1/web/payment-method/payment-status",
+      }),
+    );
+
+    const warmupCall = fetch.mock.calls.find(
+      ([url]) =>
+        url === "https://example.test/api/v1/web/payment-method/payment-status",
+    );
+    expect(warmupCall).toBeDefined();
+    const [, requestInit] = warmupCall;
+    expect(requestInit.method).toBe("POST");
+    expect(JSON.parse(requestInit.body)).toEqual({ warmup: true });
+  });
+
+  test("does not warm up payment-status when PAYMENT_STATUS_URL isn't configured", async () => {
+    mockSavedConfig();
+    mockJuspayOrderResponse({ order_id: "cart-123", status: "NEW" });
+
+    await main(buildParams());
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  test("a payment-status warm-up failure does not affect the real create-session response", async () => {
+    mockSavedConfig();
+    let callCount = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => {
+        callCount += 1;
+        if (callCount === 1) {
+          return Promise.resolve({
+            json: () =>
+              Promise.resolve({ order_id: "cart-123", status: "NEW" }),
+            ok: true,
+          });
+        }
+        throw new Error("network down");
+      }),
+    );
+
+    const result = await main(
+      buildParams({
+        PAYMENT_STATUS_URL:
+          "https://example.test/api/v1/web/payment-method/payment-status",
+      }),
+    );
+
+    expect(result.statusCode).toBe(200);
+    expect(result.body.orderId).toBe("cart-123");
   });
 });

@@ -63,6 +63,17 @@ describe("validate-payment", () => {
     vi.unstubAllGlobals();
   });
 
+  test("warmup requests return immediately without calling JusPay or resolving config", async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const result = await main(buildParams({ warmup: true }));
+
+    expect(result.body).toEqual({ op: "success", warm: true });
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(stateLib.init).not.toHaveBeenCalled();
+  });
+
   test("returns a success operation when JusPay confirms the order was charged", async () => {
     mockSavedConfig();
     mockJuspayOrderStatus("CHARGED");

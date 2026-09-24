@@ -36,6 +36,15 @@ const SUPPORTED_PAYMENT_METHOD_CODES = PAYMENT_METHODS.map(
 async function validatePayment(params) {
   const { logger, currentSpan } = getInstrumentationHelpers();
 
+  if (params.warmup === true) {
+    // Used to pre-warm this action's container — called by payment-status right after it
+    // confirms a charge, seconds before Commerce will call this action for real. Returns before
+    // touching JusPay or any stored config. The extra "warm" field distinguishes this from the
+    // unrelated success response below (unsupported payment method), which has the same op value.
+    logger.debug("Received warm-up ping");
+    return ok({ ...successOperation(), warm: true });
+  }
+
   logger.debug("Starting payment validation process");
 
   try {

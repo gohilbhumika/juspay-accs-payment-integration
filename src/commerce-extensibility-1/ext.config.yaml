@@ -102,6 +102,7 @@ runtimeManifest:
             LOG_LEVEL: $LOG_LEVEL
             stateRegion: apac
             CONFIG_ENCRYPTION_KEY: $CONFIG_ENCRYPTION_KEY
+            PAYMENT_STATUS_URL: $PAYMENT_STATUS_URL
           annotations:
             require-adobe-auth: false
             final: true
@@ -115,6 +116,11 @@ runtimeManifest:
             LOG_LEVEL: $LOG_LEVEL
             stateRegion: apac
             CONFIG_ENCRYPTION_KEY: $CONFIG_ENCRYPTION_KEY
+            VALIDATE_PAYMENT_URL: $VALIDATE_PAYMENT_URL
+            AIO_COMMERCE_AUTH_IMS_CLIENT_ID: $AIO_COMMERCE_AUTH_IMS_CLIENT_ID
+            AIO_COMMERCE_AUTH_IMS_CLIENT_SECRETS: $AIO_COMMERCE_AUTH_IMS_CLIENT_SECRETS
+            AIO_COMMERCE_AUTH_IMS_ORG_ID: $AIO_COMMERCE_AUTH_IMS_ORG_ID
+            AIO_COMMERCE_AUTH_IMS_SCOPES: $AIO_COMMERCE_AUTH_IMS_SCOPES
           annotations:
             require-adobe-auth: false
             final: true

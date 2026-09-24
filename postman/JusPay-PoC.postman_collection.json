@@ -142,6 +142,39 @@
       ]
     },
     {
+      "name": "1b. create-session warm-up ping",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"warmup\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/{{packageName}}/create-session",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{packageName}}", "create-session"]
+        },
+        "description": "Directly tests the warm-up short-circuit on create-session — require-adobe-auth: false, so no auth headers needed. Should return { warm: true } immediately, without ever calling JusPay or reading stored config. This is what the storefront is meant to fire silently once the customer reaches the payment step, a few seconds before they'd click Pay."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('warm is true', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.body.warm).to.eql(true);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
       "name": "2. validate-payment (before paying — expect exception)",
       "request": {
         "method": "POST",
@@ -210,6 +243,41 @@
       ]
     },
     {
+      "name": "3b. validate-payment warm-up ping",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "x-gw-ims-org-id", "value": "{{imsOrgId}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"warmup\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/{{packageName}}/validate-payment",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{packageName}}", "validate-payment"]
+        },
+        "description": "Directly tests the warm-up short-circuit added to validate-payment — same require-adobe-auth path as requests #2/#3, so needs a real accessToken (the pre-request script handles this). Should return { op: 'success' } immediately, without ever calling JusPay or reading stored config. This is what payment-status fires automatically after a charge is confirmed (see payment-status/index.js's warmupValidatePayment) — use this request to test the warm-up in isolation, without needing a real charged order first."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('op is success', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.body.op).to.eql('success');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
       "name": "4. payment-status (frontend-facing, no auth)",
       "request": {
         "method": "GET",
@@ -229,6 +297,39 @@
             "exec": [
               "pm.test('status code is 200', () => pm.response.to.have.status(200));",
               "console.log(pm.response.json());"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4b. payment-status warm-up ping",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"warmup\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/{{packageName}}/payment-status",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{packageName}}", "payment-status"]
+        },
+        "description": "Directly tests the warm-up short-circuit on payment-status — require-adobe-auth: false, so no auth headers needed. Sent as POST with a JSON body (not the usual GET?orderId=...) since that's exactly how create-session's warmupPaymentStatus() calls it for real — matters because a GET ?warmup=true would arrive as the string \"true\", not boolean true, and silently fail the === true check. Should return { warm: true } immediately, without ever calling JusPay or reading stored config."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('warm is true', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.body.warm).to.eql(true);",
+              "});"
             ],
             "type": "text/javascript"
           }

@@ -4,9 +4,9 @@ web: web-src
 hooks:
   # Windows fix: the generator's default hooks use POSIX `VAR=value command` syntax,
   # which cmd.exe can't parse. cross-env makes the env-var assignment work on any shell.
-  pre-app-build: npx cross-env EXTENSION=backend-ui/2 npx aio-commerce-lib-app hooks pre-app-build
-  pre-app-dev: npx cross-env EXTENSION=backend-ui/2 npx aio-commerce-lib-app hooks pre-app-dev
-  pre-app-run: npx cross-env EXTENSION=backend-ui/2 npx aio-commerce-lib-app hooks pre-app-run
+  pre-app-build: npx cross-env EXTENSION=backend-ui/2 npx aio-commerce-lib-app hooks pre-app-build && EXTENSION=backend-ui/2 npx aio-commerce-lib-app hooks pre-app-build
+  pre-app-dev: npx cross-env EXTENSION=backend-ui/2 npx aio-commerce-lib-app hooks pre-app-dev && EXTENSION=backend-ui/2 npx aio-commerce-lib-app hooks pre-app-dev
+  pre-app-run: npx cross-env EXTENSION=backend-ui/2 npx aio-commerce-lib-app hooks pre-app-run && EXTENSION=backend-ui/2 npx aio-commerce-lib-app hooks pre-app-run
 
 operations:
   view:
